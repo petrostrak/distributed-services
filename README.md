@@ -1,2 +1,2 @@
-# distributed-services
+## Distributed Services
 Distributed Services with Go
