@@ -1,6 +1,9 @@
 package server
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type HTTPServer struct {
 	Log *Log
@@ -41,6 +44,26 @@ type ConsumeResponse struct {
 	Record Record `json:"record"`
 }
 
-func (s *HTTPServer) handleProduce(w http.ResponseWriter, r *http.Request) {}
+func (s *HTTPServer) handleProduce(w http.ResponseWriter, r *http.Request) {
+	var req ProduceRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	offset, err := s.Log.Append(req.Record)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := ProduceResponse{Offset: offset}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 func (s *HTTPServer) handleConsume(w http.ResponseWriter, r *http.Request) {}
