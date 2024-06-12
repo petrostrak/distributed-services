@@ -10,8 +10,8 @@ var (
 )
 
 type Record struct {
-	Value  []byte
-	Offset uint64
+	Value  []byte `json:"value"`
+	Offset uint64 `json:"offset"`
 }
 
 type Log struct {
@@ -35,13 +35,13 @@ func (l *Log) Append(record Record) (uint64, error) {
 	return record.Offset, nil
 }
 
-func (l *Log) Read(offset uint64) (*Record, error) {
+func (l *Log) Read(offset uint64) (Record, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
 	if offset >= uint64(len(l.records)) {
-		return nil, ErrOffsetNotFound
+		return Record{}, ErrOffsetNotFound
 	}
 
-	return &l.records[offset], nil
+	return l.records[offset], nil
 }
