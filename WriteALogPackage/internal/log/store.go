@@ -104,3 +104,17 @@ func (s *store) Read(pos uint64) ([]byte, error) {
 
 	return b, err
 }
+
+// ReadAt reads len(p) bytes into p beginning at the off offset in the store's file.
+// It implements io.ReaderAt on the store type.
+func (s *store) ReadAt(p []byte, off int64) (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	err := s.buf.Flush()
+	if err != nil {
+		return 0, nil
+	}
+
+	return s.File.ReadAt(p, off)
+}
