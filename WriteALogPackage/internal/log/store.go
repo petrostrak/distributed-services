@@ -24,7 +24,7 @@ const (
 type store struct {
 	*os.File
 
-	mu  *sync.Mutex
+	mu  sync.RWMutex
 	buf *bufio.Writer
 
 	size uint64
@@ -47,7 +47,7 @@ func newStore(f *os.File) (*store, error) {
 }
 
 // Append persists the given bytes to the store.
-func (s store) Append(p []byte) (n uint64, pos uint64, err error) {
+func (s *store) Append(p []byte) (n uint64, pos uint64, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -73,4 +73,34 @@ func (s store) Append(p []byte) (n uint64, pos uint64, err error) {
 	s.size += uint64(w)
 
 	return uint64(w), pos, nil
+}
+
+// Read returns the record stored at the given position.
+func (s *store) Read(pos uint64) ([]byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// We flush the buffer, in case we're about to try to read
+	// a record that the buffer hasn't flushed to disk yet.
+	err := s.buf.Flush()
+	if err != nil {
+		return nil, err
+	}
+
+	// We find out how many bytes we have to read to get the whole
+	// record.
+	size := make([]byte, lenWidth)
+	_, err = s.File.ReadAt(size, int64(pos))
+	if err != nil {
+		return nil, err
+	}
+
+	// We fetch the record.
+	b := make([]byte, enc.Uint64(size))
+	_, err = s.File.ReadAt(b, int64(pos+lenWidth))
+	if err != nil {
+		return nil, err
+	}
+
+	return b, err
 }
