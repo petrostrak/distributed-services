@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -75,11 +76,11 @@ func (s *HTTPServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	record, err := s.Log.Read(req.Offset)
-	if err == ErrOffsetNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
 	if err != nil {
+		if errors.Is(err, ErrOffsetNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
