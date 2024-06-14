@@ -123,6 +123,7 @@ func (i *index) Write(off uint32, pos uint64) error {
 	return nil
 }
 
+// Name returns the index's file path.
 func (i *index) Name() string {
 	return i.file.Name()
 }
