@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path"
+
+	api "github.com/petrostrak/proglog/StructureDataWithProtobuf/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type segment struct {
@@ -65,4 +68,37 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 	}
 
 	return s, nil
+}
+
+// Append writes the record to the segment and returns the newly appended record's offset.
+// The log returns the offset to the API response.
+func (s *segment) Append(record *api.Record) (offset uint64, err error) {
+	cur := s.nextOffset
+	record.Offset = cur
+	p, err := proto.Marshal(record)
+	if err != nil {
+		return 0, err
+	}
+
+	// The segment appends the data to the store.
+	_, pos, err := s.store.Append(p)
+	if err != nil {
+		return 0, err
+	}
+
+	// It adds an index entry. Sinse index offsets are relative to the base
+	// offset, we subtract the segment's next offset from its base offse to
+	// get the entry's relative offset in the segment.
+	err = s.index.Write(
+		uint32(s.nextOffset-uint64(s.baseOffset)),
+		pos,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	// We increment the next offset to prep for a future append call.
+	s.nextOffset++
+
+	return cur, nil
 }
