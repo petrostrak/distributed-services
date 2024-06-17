@@ -122,3 +122,10 @@ func (s *segment) Read(off uint64) (*api.Record, error) {
 
 	return record, err
 }
+
+// IsMaxed returns whether the segment has reached its max size, either by
+// writting too much to the store of the index.
+func (s *segment) IsMaxed() bool {
+	return s.store.size >= s.config.Segment.MaxStoreBytes ||
+		s.index.size >= s.config.Segment.MaxIndexBytes
+}
