@@ -129,3 +129,36 @@ func (s *segment) IsMaxed() bool {
 	return s.store.size >= s.config.Segment.MaxStoreBytes ||
 		s.index.size >= s.config.Segment.MaxIndexBytes
 }
+
+func (s *segment) Close() error {
+	err := s.index.Close()
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(s.index.Name())
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(s.store.Name())
+}
+
+// Remove closes the segment and removes the index and store files.
+func (s *segment) Remove() error {
+	err := s.index.Close()
+	if err != nil {
+		return err
+	}
+
+	return s.store.Close()
+}
+
+// nearestMultiple returns the nearest and lesser multiple of k in j.
+// eg nearestMultiple(9, 4) == 8.
+func nearestMultiple(j, k uint64) uint64 {
+	if j >= 0 {
+		return (j / k) * k
+	}
+	return ((j - k + 1) / k) * k
+}
