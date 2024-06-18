@@ -3,13 +3,15 @@
 package log
 
 import (
-	api "github.com/petrostrak/proglog/api/v1"
+	"fmt"
 	"os"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+
+	api "github.com/petrostrak/proglog/api/v1"
 )
 
 type Log struct {
@@ -106,4 +108,24 @@ func (l *Log) Append(record *api.Record) (uint64, error) {
 	}
 
 	return off, err
+}
+
+// Read reads the record stored at the given offset.
+func (l *Log) Read(off uint64) (*api.Record, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	var s *segment
+	for _, segment := range l.segments {
+		if segment.baseOffset <= off && off < segment.nextOffset {
+			s = segment
+			break
+		}
+	}
+
+	if s == nil || s.nextOffset <= off {
+		return nil, fmt.Errorf("offset out of range: %d", off)
+	}
+
+	return s.Read(off)
 }
