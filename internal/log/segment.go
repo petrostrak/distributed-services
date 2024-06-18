@@ -35,8 +35,7 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		return nil, err
 	}
 
-	s.store, err = newStore(storeFile)
-	if err != nil {
+	if s.store, err = newStore(storeFile); err != nil {
 		return nil, err
 	}
 
@@ -49,16 +48,14 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		return nil, err
 	}
 
-	s.index, err = newIndex(indexFile, c)
-	if err != nil {
+	if s.index, err = newIndex(indexFile, c); err != nil {
 		return nil, err
 	}
 
 	// If the index is empty, the next record appended to the segment would be
 	// the first record and its offset would be the segment's base offset.
-	off, _, err := s.index.Read(-1)
-	if err != nil {
-		return nil, err
+	if off, _, err := s.index.Read(-1); err != nil {
+		s.nextOffset = baseOffset
 	} else {
 		// If the index has at least one entry, then that means the offset
 		// of the next record written should take the offset at the end of
@@ -66,7 +63,6 @@ func newSegment(dir string, baseOffset uint64, c Config) (*segment, error) {
 		// relative offset.
 		s.nextOffset = baseOffset + uint64(off) + 1
 	}
-
 	return s, nil
 }
 
@@ -131,27 +127,27 @@ func (s *segment) IsMaxed() bool {
 }
 
 func (s *segment) Close() error {
-	err := s.index.Close()
-	if err != nil {
+	if err := s.index.Close(); err != nil {
 		return err
 	}
-
-	err = os.Remove(s.index.Name())
-	if err != nil {
+	if err := s.store.Close(); err != nil {
 		return err
 	}
-
-	return os.Remove(s.store.Name())
+	return nil
 }
 
 // Remove closes the segment and removes the index and store files.
 func (s *segment) Remove() error {
-	err := s.index.Close()
-	if err != nil {
+	if err := s.Close(); err != nil {
 		return err
 	}
-
-	return s.store.Close()
+	if err := os.Remove(s.index.Name()); err != nil {
+		return err
+	}
+	if err := os.Remove(s.store.Name()); err != nil {
+		return err
+	}
+	return nil
 }
 
 // nearestMultiple returns the nearest and lesser multiple of k in j.
