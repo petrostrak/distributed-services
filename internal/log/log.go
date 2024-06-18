@@ -129,3 +129,35 @@ func (l *Log) Read(off uint64) (*api.Record, error) {
 
 	return s.Read(off)
 }
+
+// Close iterates over the segments and closes them.
+func (l *Log) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	for _, segment := range l.segments {
+		if err := segment.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Remove closes the log and then removes its data.
+func (l *Log) Remove() error {
+	if err := l.Close(); err != nil {
+		return err
+	}
+
+	return os.RemoveAll(l.Dir)
+}
+
+// Reset removes the log and then creates a new log to replace it.
+func (l *Log) Reset() error {
+	if err := l.Remove(); err != nil {
+		return err
+	}
+
+	return l.setup()
+}
