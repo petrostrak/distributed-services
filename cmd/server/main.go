@@ -4,7 +4,7 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/petrostrak/proglog/LetsGo/internal/server"
+	"github.com/petrostrak/proglog/internal/server"
 )
 
 func main() {
