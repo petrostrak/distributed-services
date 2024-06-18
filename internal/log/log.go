@@ -3,6 +3,7 @@
 package log
 
 import (
+	api "github.com/petrostrak/proglog/api/v1"
 	"os"
 	"path"
 	"sort"
@@ -85,4 +86,24 @@ func (l *Log) newSegment(off uint64) error {
 	l.activeSegment = s
 
 	return nil
+}
+
+// Append appends a record to the log.
+func (l *Log) Append(record *api.Record) (uint64, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	// We append the record to the active segment.
+	off, err := l.activeSegment.Append(record)
+	if err != nil {
+		return 0, err
+	}
+
+	// If the segment is at its max size, we make a new
+	// active segment.
+	if l.activeSegment.IsMaxed() {
+		err = l.newSegment(off + 1)
+	}
+
+	return off, err
 }
