@@ -180,3 +180,24 @@ func (l *Log) HighestOffset() (uint64, error) {
 
 	return off - 1, nil
 }
+
+// Truncate removes all segments whose highest offset is lower than lowest.
+func (l *Log) Truncate(lowest uint64) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	var segments []*segment
+	for _, s := range l.segments {
+		if s.nextOffset <= lowest+1 {
+			if err := s.Remove(); err != nil {
+				return err
+			}
+			continue
+		}
+		segments = append(segments, s)
+	}
+
+	l.segments = segments
+
+	return nil
+}
