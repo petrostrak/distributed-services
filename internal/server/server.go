@@ -4,6 +4,7 @@ import (
 	"context"
 
 	api "github.com/petrostrak/proglog/api/v1"
+	"google.golang.org/grpc"
 )
 
 type CommitLog interface {
@@ -16,6 +17,19 @@ type Config struct {
 }
 
 var _ api.LogServer = (*grpcServer)(nil)
+
+// NewGRPCServer instantiates the service, creates a gRPC server and
+// registers the service to that server.
+func NewGRPCServer(cfg *Config) (*grpc.Server, error) {
+	gsrv := grpc.NewServer()
+	srv, err := newgrpcServer(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	api.RegisterLogServer(gsrv, srv)
+	return gsrv, nil
+}
 
 type grpcServer struct {
 	api.UnimplementedLogServer
