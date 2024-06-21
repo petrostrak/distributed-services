@@ -3,7 +3,6 @@
 package log
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path"
