@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 )
 
+// These variables define the paths to the certs we generated and need
+// to look up.
 var (
 	CAFile         = configFile("ca.pem")
 	ServerCertFile = configFile("server.pem")
